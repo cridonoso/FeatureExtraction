@@ -1,4 +1,5 @@
-from FATSslim import FATS
+# from FATSslim import FATS
+import FATS
 import os, sys
 import multiprocessing as mp
 import util_records as data
@@ -75,14 +76,18 @@ def run_fats(lc, label):
 
 	return array
 
-def calculate_features(path, name, n_samples=-1, distribution=False):
-	
+
+def calculate_features(path, name, n_samples=-1, mp=False):
+		
+	path_to_save = './features/{}'.format(name)
+	os.makedirs(path_to_save, exist_ok=True)
+
 	light_curves = data.load_record(path, 1, n_samples=n_samples)
 
 	starttime = time.time()
 	
 
-	if distribution:
+	if mp:
 		processes = []
 		num_cores = mp.cpu_count()
 		print ('[INFO] Using',num_cores,'cores')
@@ -105,47 +110,63 @@ def calculate_features(path, name, n_samples=-1, distribution=False):
 	elapsed = time.time() - starttime
 	print ('FATS total run time: ',elapsed,'seg for ', features.shape[0],'samples')
 	# Writting g5 file with features
-	with h5py.File('{}.h5'.format(name), 'w') as hf:
+	with h5py.File('{}/features.h5'.format(path_to_save), 'w') as hf:
 		hf.create_dataset('features', data=features)
 
-def calculate_online_features(path, name, tokens=[], n_samples=-1):
+
+def calculate_online_features(path, name, tokens=[], n_samples=-1, mp=False):
 	if tokens == []:
 		tokens = np.arange(10, 210, 10)
 	
-	path_to_save = './online_features/{}'.format(name)
+	path_to_save = './features/{}'.format(name)
 	os.makedirs(path_to_save, exist_ok=True)
 
 	light_curves = data.load_record(path, 1, n_samples=n_samples)
 
-	num_cores = mp.cpu_count()
-	print('[INFO] Online computation')
-	print ('[INFO] Using', num_cores,'cores')
 
+	if mp:
+		num_cores = mp.cpu_count()
+		print('[INFO] Online computation')
+		print ('[INFO] Using', num_cores,'cores')
+		for lim in tokens:
+			starttime = time.time()
+			pool = mp.Pool(processes=num_cores)
+			results = []
+			for i, (x, y, m )in enumerate(light_curves):
+				lc = tf.boolean_mask(x[0], m[0]).numpy()[:lim]
+				results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
+			features = np.array([p.get() for p in results])
+			with h5py.File('{}/sub_{}.h5'.format(path_to_save, lim), 'w') as hf:
+				hf.create_dataset('features', data=features)
+			print('[INFO] {} obs done! {} seconds for {} curves'.format(lim, time.time() - starttime, features.shape[0]))
+	else:
+		print('[INFO] Online computation')
+		print ('[INFO] Using 1 core')
+		times = []
+		with h5py.File('{}/online_features.h5'.format(path_to_save), 'w') as hf:
+			for lim in tokens:
+				starttime = time.time()
+				results = []
+				for i, (x, y, m )in enumerate(light_curves):
+					lc = tf.boolean_mask(x[0], m[0]).numpy()[:lim]
+					results.append(run_fats(lc, y.numpy()))
+				features = np.array(results, dtype=np.float32)
+				
+				elapsed = time.time() - starttime
+				times.append(elapsed)
 
-	for lim in tokens:
-		starttime = time.time()
-		pool = mp.Pool(processes=num_cores)
-		results = []
-		for i, (x, y, m )in enumerate(light_curves):
-			lc = tf.boolean_mask(x[0], m[0]).numpy()[:lim]
-			results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
-
-		features = np.array([p.get() for p in results])
-		
-		with h5py.File('{}/sub_{}.h5'.format(path_to_save, lim), 'w') as hf:
-			hf.create_dataset('features', data=features)
-
-		print('[INFO] {} obs done! {} seconds for {} curves'.format(lim, time.time() - starttime, features.shape[0]))
-
-
+				
+				hf.create_dataset(str(lim), data=features)
+				print('[INFO] {} obs done! {} seconds for {} curves'.format(lim, elapsed, features.shape[0]))
+			hf.create_dataset('times', data=np.array(times))
 
 if __name__ == '__main__':
 	# path = '../datasets/records/linear/fold_0/test.tfrecords'
 	path = sys.argv[1]
 	name = sys.argv[2] # test_0
 
-	calculate_features(path, name, n_samples=100)
-	# calculate_online_features(path, name, n_samples=100)
+	calculate_features(path, name, n_samples=-1)
+	# calculate_online_features(path, name, n_samples=-1)
 
-	# hf = h5py.File('test0.h5', 'r')
-	# print(hf.keys())
+	# hf = h5py.File('./features/ogle/train/online_features.h5', 'r')
+	# print(hf['10'])
