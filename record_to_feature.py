@@ -1,5 +1,5 @@
-# from FATSslim import FATS
-import FATS
+from FATSslim import FATS
+# import FATS
 import os, sys
 import multiprocessing as mp
 import util_records as data
@@ -77,7 +77,7 @@ def run_fats(lc, label):
 	return array
 
 
-def calculate_features(path, name, n_samples=-1, mp=False):
+def calculate_features(path, name, n_samples=-1, multiprocessing=False):
 		
 	path_to_save = './features/{}'.format(name)
 	os.makedirs(path_to_save, exist_ok=True)
@@ -87,7 +87,7 @@ def calculate_features(path, name, n_samples=-1, mp=False):
 	starttime = time.time()
 	
 
-	if mp:
+	if multiprocessing:
 		processes = []
 		num_cores = mp.cpu_count()
 		print ('[INFO] Using',num_cores,'cores')
@@ -96,15 +96,16 @@ def calculate_features(path, name, n_samples=-1, mp=False):
 		results = []
 		for x, y, m in light_curves:
 			lc = tf.boolean_mask(x[0], m[0]).numpy()
-			results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
+			if lc.shape[0] >= 10:
+				results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
 		features = np.array([p.get() for p in results])
 	else:
 		print('[INFO] Using 1 core')
 		results = []
 		for x, y, m in light_curves:
 			lc = tf.boolean_mask(x[0], m[0]).numpy()
-			
-			results.append(run_fats(lc, y.numpy()))		
+			if lc.shape[0] >= 10:
+				results.append(run_fats(lc, y.numpy()))		
 		features = np.array(results, dtype=np.float32)
 	
 	elapsed = time.time() - starttime
@@ -114,7 +115,7 @@ def calculate_features(path, name, n_samples=-1, mp=False):
 		hf.create_dataset('features', data=features)
 
 
-def calculate_online_features(path, name, tokens=[], n_samples=-1, mp=False):
+def calculate_online_features(path, name, tokens=[], n_samples=-1, multiprocessing=False):
 	if tokens == []:
 		tokens = np.arange(10, 210, 10)
 	
@@ -124,7 +125,7 @@ def calculate_online_features(path, name, tokens=[], n_samples=-1, mp=False):
 	light_curves = data.load_record(path, 1, n_samples=n_samples)
 
 
-	if mp:
+	if multiprocessing:
 		num_cores = mp.cpu_count()
 		print('[INFO] Online computation')
 		print ('[INFO] Using', num_cores,'cores')
@@ -134,7 +135,8 @@ def calculate_online_features(path, name, tokens=[], n_samples=-1, mp=False):
 			results = []
 			for i, (x, y, m )in enumerate(light_curves):
 				lc = tf.boolean_mask(x[0], m[0]).numpy()[:lim]
-				results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
+				if lc.shape[0] >= 10:
+					results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
 			features = np.array([p.get() for p in results])
 			with h5py.File('{}/sub_{}.h5'.format(path_to_save, lim), 'w') as hf:
 				hf.create_dataset('features', data=features)
@@ -149,7 +151,8 @@ def calculate_online_features(path, name, tokens=[], n_samples=-1, mp=False):
 				results = []
 				for i, (x, y, m )in enumerate(light_curves):
 					lc = tf.boolean_mask(x[0], m[0]).numpy()[:lim]
-					results.append(run_fats(lc, y.numpy()))
+					if lc.shape[0] >= 10:
+						results.append(run_fats(lc, y.numpy()))
 				features = np.array(results, dtype=np.float32)
 				
 				elapsed = time.time() - starttime
@@ -165,7 +168,7 @@ if __name__ == '__main__':
 	path = sys.argv[1]
 	name = sys.argv[2] # test_0
 
-	calculate_features(path, name, n_samples=-1)
+	calculate_features(path, name, n_samples=100, multiprocessing=True)
 	# calculate_online_features(path, name, n_samples=-1)
 
 	# hf = h5py.File('./features/ogle/train/online_features.h5', 'r')
