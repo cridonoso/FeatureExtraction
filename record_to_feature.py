@@ -75,30 +75,36 @@ def run_fats(lc, label):
 
 	return array
 
-def calculate_features(path, name, n_samples=-1):
+def calculate_features(path, name, n_samples=-1, distribution=False):
 	
 	light_curves = data.load_record(path, 1, n_samples=n_samples)
 
 	starttime = time.time()
-	processes = []
-
-
-	start_time = time.time()
-	num_cores = mp.cpu_count()
-	print ('you are using',num_cores,'cores')
 	
-	pool = mp.Pool(processes=num_cores)
-	
-	results = []
-	for x, y, m in light_curves:
-		lc = tf.boolean_mask(x[0], m[0]).numpy()
-		results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
 
-	features = np.array([p.get() for p in results])
-	elapsed = time.time() - start_time
+	if distribution:
+		processes = []
+		num_cores = mp.cpu_count()
+		print ('[INFO] Using',num_cores,'cores')
+		pool = mp.Pool(processes=num_cores)
+	
+		results = []
+		for x, y, m in light_curves:
+			lc = tf.boolean_mask(x[0], m[0]).numpy()
+			results.append(pool.apply_async(run_fats, args=(lc, y.numpy())))
+		features = np.array([p.get() for p in results])
+	else:
+		print('[INFO] Using 1 core')
+		results = []
+		for x, y, m in light_curves:
+			lc = tf.boolean_mask(x[0], m[0]).numpy()
+			
+			results.append(run_fats(lc, y.numpy()))		
+		features = np.array(results, dtype=np.float32)
+	
+	elapsed = time.time() - starttime
 	print ('FATS total run time: ',elapsed,'seg for ', features.shape[0],'samples')
-
-	total_feat = np.array(most_important+harmonics+others)
+	# Writting g5 file with features
 	with h5py.File('{}.h5'.format(name), 'w') as hf:
 		hf.create_dataset('features', data=features)
 
@@ -138,8 +144,8 @@ if __name__ == '__main__':
 	path = sys.argv[1]
 	name = sys.argv[2] # test_0
 
-	# calculate_features(path, name, n_samples=100)
-	calculate_online_features(path, name, n_samples=100)
+	calculate_features(path, name, n_samples=100)
+	# calculate_online_features(path, name, n_samples=100)
 
 	# hf = h5py.File('test0.h5', 'r')
 	# print(hf.keys())
