@@ -1,5 +1,5 @@
-from FATSslim import FATS
-# import FATS
+# from FATSslim import FATS
+import FATS
 import os, sys
 import multiprocessing as mp
 import util_records as data
@@ -168,8 +168,8 @@ if __name__ == '__main__':
 	path = sys.argv[1]
 	name = sys.argv[2] # test_0
 
-	calculate_features(path, name, n_samples=100, multiprocessing=True)
-	# calculate_online_features(path, name, n_samples=-1)
+	calculate_features(path, name, n_samples=-1, multiprocessing=True)
+	# calculate_online_features(path, name, n_samples=-1, multiprocessing=True)
 
 	# hf = h5py.File('./features/ogle/train/online_features.h5', 'r')
 	# print(hf['10'])
