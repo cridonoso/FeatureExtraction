@@ -115,11 +115,11 @@ def calculate_features(path, name, n_samples=-1, multiprocessing=False):
 		hf.create_dataset('features', data=features)
 
 
-def calculate_online_features(path, name, tokens=[], n_samples=-1, multiprocessing=False):
+def calculate_online_features(path, path_to_save, tokens=[], n_samples=-1, multiprocessing=False):
 	if tokens == []:
 		tokens = np.arange(10, 210, 10)
 	
-	path_to_save = './features/{}'.format(name)
+	
 	os.makedirs(path_to_save, exist_ok=True)
 
 	light_curves = data.load_record(path, 1, n_samples=n_samples)
@@ -158,11 +158,12 @@ def calculate_online_features(path, name, tokens=[], n_samples=-1, multiprocessi
 
 if __name__ == '__main__':
 	# path = '../datasets/records/linear/fold_0/test.tfrecords'
-	path = sys.argv[1]
-	name = sys.argv[2] # test_0
+	path = sys.argv[1] 
+	name = sys.argv[2] # /ogle/test_0
+	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
 
-	# calculate_features(path, name, n_samples=-1, multiprocessing=True)
-	calculate_online_features(path, name, n_samples=1000, multiprocessing=True)
+	calculate_features(path, name, n_samples=-1, multiprocessing=True)
+	# calculate_online_features(path, name, n_samples=1000, multiprocessing=True)
 
 	# hf = h5py.File('./features/ogle/train/online_features.h5', 'r')
 	# print(hf['10'])
