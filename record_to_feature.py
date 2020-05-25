@@ -268,8 +268,9 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 if __name__ == '__main__':
 	# path = '../datasets/records/linear/fold_0/test.tfrecords'
 	name = sys.argv[1] # /ogle/test_0
-	path_meta = '../datasets/raw_data/{}/{}/{}_dataset.dat'.format(name, name.upper(), name.upper())
-	path_lcs  = '../datasets/raw_data/{}/{}/LCs/'.format(name, name.upper())
+	main_path = sys.argv[2] #'../datasets/raw_data/'
+	path_meta = '{}/{}/{}/{}_dataset.dat'.format(main_path, name, name.upper(), name.upper())
+	path_lcs  = '{}/{}/{}/LCs/'.format(main_path, name, name.upper())
 
 	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
 	# path_to_save = '../datasets/features/{}/'.format(name)
