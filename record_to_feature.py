@@ -120,7 +120,7 @@ def run_fats(lc, label):
 	dic = results.result(method='dict')
 	
 	array = np.array(list(dic.values()), dtype=np.float32)
-	array = np.nan_to_num(np.concatenate([array, [label]]))
+	array = np.nan_to_num(np.concatenate([array, label]))
 
 	return array
 
@@ -249,7 +249,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 
 			
 
-			results.append(pool.apply_async(run_fats, args=(normalized_df.values, class_code[name][row['Class']])))
+			results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
 
 			# if count == 5: break
 			# count+=1
@@ -263,19 +263,76 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 			hf.create_dataset('features', data=features[..., :-1])
 			hf.create_dataset('labels', data=features[..., -1])
 
+def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
+	if tokens == []:
+		tokens = np.arange(10, 210, 10)
+	
+	os.makedirs(path_to_save, exist_ok=True)
+
+	metadata_df = pd.read_csv(path)
+	n_classes = len(class_code)
+
+	min_max_by_class = get_moments(metadata_df, path_lcs, 
+					   names=col_names[name], 
+					   delim_whitespace=delim_whitespaces[name])
+
+	num_cores = mp.cpu_count()
+	print('[INFO] Online computation')
+	print ('[INFO] Using', num_cores,'cores')
+	times = []
+	 
+	with h5py.File('{}/online_features.h5'.format(path_to_save), 'w') as hf:
+		for lim in tokens:
+			starttime = time.time()
+			pool = mp.Pool(processes=num_cores)
+			results = []
+			count = 0
+			for k, row in metadata_df.iterrows():
+				lc_info = row['Path'].split('/')
+				if row['N'] < lim: continue
+				if col_names[name] == []:
+					df = pd.read_csv('{}/{}'.format(path_lcs, lc_info[-1]), 
+													delim_whitespace=delim_whitespaces[name])
+				else:
+					df = pd.read_csv('{}/{}'.format(path_lcs, lc_info[-1]), 
+													delim_whitespace=delim_whitespaces[name],
+													names=col_names[name])
+
+				df = df.iloc[0:lim,:3]
+				min_v = min_max_by_class['min']
+				max_v = min_max_by_class['max']
+				normalized_df = (df-min_v)/(max_v-min_v)
+
+				results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
+				
+				# if count==10:break
+				# count+=1
+
+
+			features = np.array([p.get() for p in results])
+			elapsed = time.time() - starttime
+
+			times.append(elapsed)	
+			hf.create_dataset(str(lim), data=features)
+			print('[INFO] {} obs done! {} seconds for {} curves'.format(lim, elapsed, features.shape[0]))
+		hf.create_dataset('time', data=np.array(times))
+
 
 
 if __name__ == '__main__':
-	# path = '../datasets/records/linear/fold_0/test.tfrecords'
 	name = sys.argv[1] # /ogle/test_0
 	main_path = sys.argv[2] #'../datasets/raw_data/'
 	path_meta = '{}/{}/{}/{}_dataset.dat'.format(main_path, name, name.upper(), name.upper())
 	path_lcs  = '{}/{}/{}/LCs/'.format(main_path, name, name.upper())
-
 	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
 	# path_to_save = '../datasets/features/{}/'.format(name)
+	
+	# rf_features_from_dat(path_meta, path_lcs, path_to_save, name)
 
-	rf_features_from_dat(path_meta, path_lcs, path_to_save, name)
+	path_test_meta = '/home/shared/cridonoso/datasets/{}/test_curves.csv'.format(name)
+	# path_test_meta = '../datasets/features/{}/test_curves.csv'.format(name)
+
+	online_features_from_dat(path_test_meta, path_lcs, path_to_save, name)
 
 	# calculate_features(path, name, n_samples=-1, multiprocessing=True)
 	# calculate_online_features(path, name, n_samples=1000, multiprocessing=True)
