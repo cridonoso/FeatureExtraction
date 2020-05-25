@@ -1,12 +1,30 @@
-from FATSslim import FATS
-# import FATS
+import FATS
 import os, sys
 import multiprocessing as mp
-import util_records as data
 import numpy as np
 import h5py
-import tensorflow as tf
+import pandas as pd
+try:
+	import util_records as data
+	import tensorflow as tf
+except:
+	print('No tensorflow')
 import time
+
+class_code = {'wise':{'NC':0, 'RRab':1, 'RRc':2, 'DSCT_SXPHE':3, 'CEP':4, 
+			  		  'SRV':5, 'Mira':6, 'OSARG':7, 'NonVar':8},
+			  'ogle':{'cep': 0, 'RRab': 1, 'RRc': 2, 'dsct': 3, 'EC': 4, 'ED': 5, 
+			  		  'ESD': 6, 'Mira': 7, 'SRV': 8, 'OSARG': 9, 'std': 10},
+			  'gaia':{'CEP': 0, 'T2CEP': 1, 'MIRA_SR': 2, 'DSCT_SXPHE':3, 
+			  		  'RRAB':4, 'RRC':5, 'RRD':6}}
+
+skip = {'wise': ['ACEP', 'ARRD', 'C', 'ELL', 'T2CEP', 'RRd'],
+		'ogle': [],
+		'gaia': ['ACEP', 'ARRD']}
+
+col_names = {'wise':[], 'ogle':['mjd', 'mag', 'errmag', 'a', 'b', 'c'], 'gaia':[]}
+
+delim_whitespaces = {'wise': False, 'ogle':True, 'gaia':False}
 
 most_important = ['MedianAbsDev',
 				 'PeriodLS',
@@ -65,14 +83,44 @@ others = ['Psi_CS', 'Psi_eta', 'AndersonDarling',
 		  'MaxSlope', 'PairSlopeTrend', 'Period_fit', 
 		  'StructureFunction_index_32']
 
+def process(path_lcs, lc_id, names, delim_whitespace):
+	if names == []:
+		df = pd.read_csv('{}/{}'.format(path_lcs, lc_id), 
+										delim_whitespace=delim_whitespace)
+	else:
+		df = pd.read_csv('{}/{}'.format(path_lcs, lc_id), 
+							delim_whitespace=delim_whitespace,
+							names=names)
+	return [df.iloc[:,:3].min().values, df.iloc[:,:3].max().values]
+
+def get_moments(dataframe, path_lcs, names=[], delim_whitespace=True):
+	print('[INFO] Finding min and max values all class objects')
+	
+
+	num_cores = mp.cpu_count()
+	pool = mp.Pool(processes=num_cores)
+	results = []
+	for k, row in dataframe.iterrows():
+		lc_info = row['Path'].split('/')
+		results.append(pool.apply_async(process, args=(path_lcs,
+													   lc_info[-1], 
+													   names, 
+													   delim_whitespace)))
+		if k == 5:break
+	values = np.array([p.get() for p in results])
+
+	min_values = np.min(values[:,0,:], 0)
+	max_values = np.max(values[:,1,:], 0)
+	return {'min': min_values, 'max':max_values}
 
 def run_fats(lc, label):
 	fs = FATS.FeatureSpace(Data=['magnitude','time', 'error'], featureList=most_important+harmonics+others)
 	results = fs.calculateFeature([lc[:,0], lc[:,1], lc[:,2]])	
 
 	dic = results.result(method='dict')
+	
 	array = np.array(list(dic.values()), dtype=np.float32)
-	array = np.nan_to_num(np.concatenate([array, label]))
+	array = np.nan_to_num(np.concatenate([array, [label]]))
 
 	return array
 
@@ -154,15 +202,81 @@ def calculate_online_features(path, path_to_save, tokens=[], n_samples=-1, multi
 			hf.create_dataset(str(lim), data=features)
 			print('[INFO] {} obs done! {} seconds for {} curves'.format(lim, elapsed, features.shape[0]))
 		hf.create_dataset('time', data=np.array(times))
-		
+
+def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
+	os.makedirs(path_to_save, exist_ok = True)
+
+	metadata_df = pd.read_csv(path_meta)
+	metadata_df = metadata_df[~metadata_df.Class.isin(skip[name])]
+	metadata_df = metadata_df[metadata_df['N'] >=10]
+	n_classes = len(class_code)
+
+	min_max_by_class = get_moments(metadata_df, path_lcs, 
+					   names=col_names[name], 
+					   delim_whitespace=delim_whitespaces[name])
+
+	df_train = metadata_df.sample(frac=0.5)
+	df_test  = metadata_df.loc[~metadata_df.index.isin(df_train.index)]
+
+	print(len(np.unique(df_train.Class)))
+	print(len(np.unique(df_test.Class)))
+
+	df_test.to_csv(path_to_save+'/test_curves.csv')
+
+	num_cores = mp.cpu_count()
+
+	for dataframe, dsname in zip([df_train, df_test], ['train', 'test']):
+		pool = mp.Pool(processes=num_cores)
+		results = []
+		starttime = time.time()
+		count = 0 
+		for k, row in dataframe.iterrows():
+			lc_info = row['Path'].split('/')
+
+			if col_names[name] == []:
+				df = pd.read_csv('{}/{}'.format(path_lcs, lc_info[-1]), 
+												delim_whitespace=delim_whitespaces[name])
+			else:
+				df = pd.read_csv('{}/{}'.format(path_lcs, lc_info[-1]), 
+									delim_whitespace=delim_whitespaces[name],
+									names=col_names[name])
+
+			df = df.iloc[:,:3]
+			
+			min_v = min_max_by_class['min']
+			max_v = min_max_by_class['max']
+			normalized_df = (df-min_v)/(max_v-min_v)
+
+			
+
+			results.append(pool.apply_async(run_fats, args=(normalized_df.values, class_code[name][row['Class']])))
+
+			# if count == 5: break
+			# count+=1
+
+
+		features = np.array([p.get() for p in results])
+		elapsed = time.time() - starttime
+		print ('FATS total run time: ',elapsed,'seg for ', features.shape[0],'samples')
+		# Writting g5 file with features
+		with h5py.File('{}/{}_features.h5'.format(path_to_save, dsname), 'w') as hf:
+			hf.create_dataset('features', data=features[..., :-1])
+			hf.create_dataset('labels', data=features[..., -1])
+
+
 
 if __name__ == '__main__':
 	# path = '../datasets/records/linear/fold_0/test.tfrecords'
-	path = sys.argv[1] 
-	name = sys.argv[2] # /ogle/test_0
-	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
+	name = sys.argv[1] # /ogle/test_0
+	path_meta = '../datasets/raw_data/{}/{}/{}_dataset.dat'.format(name, name.upper(), name.upper())
+	path_lcs  = '../datasets/raw_data/{}/{}/LCs/'.format(name, name.upper())
 
-	calculate_features(path, name, n_samples=-1, multiprocessing=True)
+	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
+	# path_to_save = '../datasets/features/{}/'.format(name)
+
+	rf_features_from_dat(path_meta, path_lcs, path_to_save, name)
+
+	# calculate_features(path, name, n_samples=-1, multiprocessing=True)
 	# calculate_online_features(path, name, n_samples=1000, multiprocessing=True)
 
 	# hf = h5py.File('./features/ogle/train/online_features.h5', 'r')
