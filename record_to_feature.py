@@ -106,7 +106,7 @@ def get_moments(dataframe, path_lcs, names=[], delim_whitespace=True):
 													   lc_info[-1], 
 													   names, 
 													   delim_whitespace)))
-		if k == 5:break
+		# if k == 5:break
 	values = np.array([p.get() for p in results])
 
 	min_values = np.min(values[:,0,:], 0)
