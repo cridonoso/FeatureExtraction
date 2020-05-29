@@ -22,11 +22,18 @@ class_code = {'wise':{'NC':0, 'RRab':1, 'RRc':2, 'DSCT_SXPHE':3, 'CEP':4,
 
 skip = {'wise': ['ACEP', 'ARRD', 'C', 'ELL', 'T2CEP', 'RRd'],
 		'ogle': [],
-		'gaia': ['ACEP', 'ARRD']}
+		'gaia': ['ACEP', 'ARRD'],
+		'macho': []}
 
-col_names = {'wise':[], 'ogle':['mjd', 'mag', 'errmag', 'a', 'b', 'c'], 'gaia':[]}
+col_names = {'wise':[], 
+			 'ogle':['mjd', 'mag', 'errmag', 'a', 'b', 'c'], 
+			 'gaia':[],
+			 'macho':[]}
 
-delim_whitespaces = {'wise': False, 'ogle':True, 'gaia':False}
+delim_whitespaces = {'wise': False, 
+				  	 'ogle':True, 
+				  	 'gaia':False, 
+				  	 'macho':False}
 
 most_important = ['MedianAbsDev',
 				 'PeriodLS',
