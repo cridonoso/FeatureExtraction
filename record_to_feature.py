@@ -17,23 +17,34 @@ class_code = {'wise':{'NC':0, 'RRab':1, 'RRc':2, 'DSCT_SXPHE':3, 'CEP':4,
 			  		  'ESD': 6, 'Mira': 7, 'SRV': 8, 'OSARG': 9, 'std': 10},
 			  'gaia':{'CEP': 0, 'T2CEP': 1, 'MIRA_SR': 2, 'DSCT_SXPHE':3, 
 			  		  'RRAB':4, 'RRC':5, 'RRD':6},
-			  'macho': {'QSO':0, 'Be':1, 'CEPH':2, 'RRL':3, 'EB':4, 'MOA':5, 'LPV':6} 
+			  'css':{'ACEP':1, 'Blazkho':2, 'CEPII':3, 'DSC':4, 'EA':5, 'EA_UP':6, 'ELL':7,
+		       		  'EW':8, 'HADS':9, 'LPV':10, 'Misc':11, 'RRab':12, 'RRc':13,
+		       		  'RRd':14, 'RS_CVn':15, 'Rotational Var':15, 'Transient':16, 'beta_Lyrae':17},
+			  'macho': {'QSO':0, 'Be':1, 'CEPH':2, 'RRL':3, 'EB':4, 'MOA':5, 'LPV':6},
+			  'linear': {'RRLab':0, 'RRLc':1, 'Eclipsing Algol':2, #eclipsing algol
+			  			 'Contact binary':3, 'DSCT':4}, 
 }
 
 skip = {'wise': ['ACEP', 'ARRD', 'C', 'ELL', 'T2CEP', 'RRd'],
 		'ogle': [],
 		'gaia': ['ACEP', 'ARRD'],
-		'macho': []}
+		'css': ['CEPI', 'LADS', 'PCEB', 'Hump'],
+		'macho': [],
+		'linear': []}
 
 col_names = {'wise':[], 
 			 'ogle':['mjd', 'mag', 'errmag', 'a', 'b', 'c'], 
 			 'gaia':[],
-			 'macho':[]}
+			 'macho':[],
+			 'linear':[],
+			 'css':[]}
 
 delim_whitespaces = {'wise': False, 
 				  	 'ogle':True, 
 				  	 'gaia':False, 
-				  	 'macho':False}
+				  	 'macho':False,
+				  	 'linear':True,
+				  	 'css':False}
 
 most_important = ['MedianAbsDev',
 				 'PeriodLS',
