@@ -235,9 +235,9 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 	metadata_df = metadata_df[metadata_df['N'] >=10]
 	n_classes = len(class_code)
 
-	min_max_by_class = get_moments(metadata_df, path_lcs, 
-					   names=col_names[name], 
-					   delim_whitespace=delim_whitespaces[name])
+	# min_max_by_class = get_moments(metadata_df, path_lcs, 
+	# 				   names=col_names[name], 
+	# 				   delim_whitespace=delim_whitespaces[name])
 
 	df_train = metadata_df.sample(frac=0.5)
 	df_test  = metadata_df.loc[~metadata_df.index.isin(df_train.index)]
@@ -267,8 +267,8 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 
 			df = df.iloc[:,:3]
 			
-			min_v = min_max_by_class['min']
-			max_v = min_max_by_class['max']
+			min_v = df.min()#min_max_by_class['min']
+			max_v = df.max()#min_max_by_class['max']
 			normalized_df = (df-min_v)/(max_v-min_v)
 
 			
@@ -296,9 +296,9 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
 	metadata_df = pd.read_csv(path)
 	n_classes = len(class_code)
 
-	min_max_by_class = get_moments(metadata_df, path_lcs, 
-					   names=col_names[name], 
-					   delim_whitespace=delim_whitespaces[name])
+	# min_max_by_class = get_moments(metadata_df, path_lcs, 
+	# 				   names=col_names[name], 
+	# 				   delim_whitespace=delim_whitespaces[name])
 
 	num_cores = mp.cpu_count()
 	print('[INFO] Online computation')
@@ -323,8 +323,8 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
 													names=col_names[name])
 
 				df = df.iloc[0:lim,:3]
-				min_v = min_max_by_class['min']
-				max_v = min_max_by_class['max']
+				min_v = df.min()#min_max_by_class['min']
+				max_v = df.max()#min_max_by_class['max']
 				normalized_df = (df-min_v)/(max_v-min_v)
 
 				results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
