@@ -15,14 +15,12 @@ class_code = {'wise':{'NC':0, 'RRab':1, 'RRc':2, 'DSCT_SXPHE':3, 'CEP':4,
 			  		  'SRV':5, 'Mira':6, 'OSARG':7, 'NonVar':8},
 			  'ogle':{'cep': 0, 'RRab': 1, 'RRc': 2, 'dsct': 3, 'EC': 4, 'ED': 5, 
 			  		  'ESD': 6, 'Mira': 7, 'SRV': 8, 'OSARG': 9, 'std': 10},
-			  'gaia':{'CEP': 0, 'T2CEP': 1, 'MIRA_SR': 2, 'DSCT_SXPHE':3, 
-			  		  'RRAB':4, 'RRC':5, 'RRD':6},
-			  'css':{'ACEP':1, 'Blazkho':2, 'CEPII':3, 'DSC':4, 'EA':5, 'EA_UP':6, 'ELL':7,
-		       		  'EW':8, 'HADS':9, 'LPV':10, 'Misc':11, 'RRab':12, 'RRc':13,
-		       		  'RRd':14, 'RS_CVn':15, 'Rotational Var':15, 'Transient':16, 'beta_Lyrae':17},
+			  'gaia':{'CEP': 0, 'T2CEP': 1, 'MIRA_SR': 2, 'DSCT_SXPHE':3, 'RRAB':4, 'RRC':5, 'RRD':6},
+			  'css':{'ACEP':0, 'Blazkho':1, 'CEPII':2, 'DSC':3, 'EA':4, 'EA_UP':5, 'ELL':6,
+		       		  'EW':7, 'HADS':8, 'LPV':9, 'Misc':10, 'RRab':11, 'RRc':12,
+		       		  'RRd':13, 'RS_CVn':14, 'Rotational Var':15, 'Transient':16, 'beta_Lyrae':17},
 			  'macho': {'QSO':0, 'Be':1, 'CEPH':2, 'RRL':3, 'EB':4, 'MOA':5, 'LPV':6},
-			  'linear': {'RRLab':0, 'RRLc':1, 'Eclipsing Algol':2, #eclipsing algol
-			  			 'Contact binary':3, 'DSCT':4},
+			  'linear': {'RRLab':0, 'RRLc':1, 'Eclipsing Algol':2, 'Contact binary':3, 'DSCT':4},
 			  'asas': {'Beta Persei':0, 'Classical Cepheid':1, 'RR Lyrae FM':2, 'Semireg PV':3, 'W Ursae Ma':4}
 }
 
