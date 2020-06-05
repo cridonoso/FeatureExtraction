@@ -268,6 +268,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 			min_v = df.min()#min_max_by_class['min']
 			max_v = df.max()#min_max_by_class['max']
 			normalized_df = (df-min_v)/(max_v-min_v)
+			normalized_df = np.nan_to_num(normalized_df.values)
 
 			
 
@@ -324,7 +325,7 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
 				min_v = df.min()#min_max_by_class['min']
 				max_v = df.max()#min_max_by_class['max']
 				normalized_df = (df-min_v)/(max_v-min_v)
-
+				normalized_df = np.nan_to_num(normalized_df.values)
 				results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
 				
 				# if count==10:break
