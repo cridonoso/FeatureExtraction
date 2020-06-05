@@ -293,7 +293,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 			hf.create_dataset('features', data=features[..., :-1])
 			hf.create_dataset('labels', data=features[..., -1])
 
-def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
+def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm='n1'):
 	if tokens == []:
 		tokens = np.arange(10, 210, 10)
 	
