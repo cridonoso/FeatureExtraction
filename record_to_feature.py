@@ -360,17 +360,18 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
 if __name__ == '__main__':
 	name = sys.argv[1] # /ogle/test_0
 	main_path = sys.argv[2] #'../datasets/raw_data/'
+	norm = sys.argv[3]
 	path_meta = '{}/{}/{}/{}_dataset.dat'.format(main_path, name, name.upper(), name.upper())
 	path_lcs  = '{}/{}/{}/LCs/'.format(main_path, name, name.upper())
 	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
 	# path_to_save = '../datasets/features/{}/'.format(name)
 	
-	rf_features_from_dat(path_meta, path_lcs, path_to_save, name, norm='n1')
+	rf_features_from_dat(path_meta, path_lcs, path_to_save, name, norm=norm)
 
 	path_test_meta = '/home/shared/cridonoso/datasets/{}/test_curves.csv'.format(name)
 	# path_test_meta = '../datasets/features/{}/test_curves.csv'.format(name)
 
-	online_features_from_dat(path_test_meta, path_lcs, path_to_save, name, norm='n1')
+	online_features_from_dat(path_test_meta, path_lcs, path_to_save, name, norm=norm)
 
 	# calculate_features(path, name, n_samples=-1, multiprocessing=True)
 	# calculate_online_features(path, name, n_samples=1000, multiprocessing=True)
