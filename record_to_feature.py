@@ -225,8 +225,8 @@ def calculate_online_features(path, path_to_save, tokens=[], n_samples=-1, multi
 			print('[INFO] {} obs done! {} seconds for {} curves'.format(lim, elapsed, features.shape[0]))
 		hf.create_dataset('time', data=np.array(times))
 
-def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
-	os.makedirs(path_to_save, exist_ok = True, norm='n1')
+def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
+	os.makedirs(path_to_save, exist_ok = True)
 
 	metadata_df = pd.read_csv(path_meta)
 	metadata_df = metadata_df[~metadata_df.Class.isin(skip[name])]
