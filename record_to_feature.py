@@ -226,16 +226,17 @@ def calculate_online_features(path, path_to_save, tokens=[], n_samples=-1, multi
 		hf.create_dataset('time', data=np.array(times))
 
 def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
-	os.makedirs(path_to_save, exist_ok = True)
+	os.makedirs(path_to_save, exist_ok = True, norm='n1')
 
 	metadata_df = pd.read_csv(path_meta)
 	metadata_df = metadata_df[~metadata_df.Class.isin(skip[name])]
 	metadata_df = metadata_df[metadata_df['N'] >=10]
 	n_classes = len(class_code)
 
-	# min_max_by_class = get_moments(metadata_df, path_lcs, 
-	# 				   names=col_names[name], 
-	# 				   delim_whitespace=delim_whitespaces[name])
+	if norm == 'n1':
+		min_max_by_class = get_moments(metadata_df, path_lcs, 
+						   names=col_names[name], 
+						   delim_whitespace=delim_whitespaces[name])
 
 	df_train = metadata_df.sample(frac=0.5)
 	df_test  = metadata_df.loc[~metadata_df.index.isin(df_train.index)]
@@ -265,8 +266,14 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name):
 
 			df = df.iloc[:,:3]
 			
-			min_v = df.min()#min_max_by_class['min']
-			max_v = df.max()#min_max_by_class['max']
+			if norm == 'n1':
+				min_v = min_max_by_class['min']
+				max_v = min_max_by_class['max']
+			
+			if norm == 'n2':
+				min_v = df.min()
+				max_v = df.max()
+
 			normalized_df = (df-min_v)/(max_v-min_v)
 			normalized_df = np.nan_to_num(normalized_df.values)
 
@@ -295,9 +302,10 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
 	metadata_df = pd.read_csv(path)
 	n_classes = len(class_code)
 
-	# min_max_by_class = get_moments(metadata_df, path_lcs, 
-	# 				   names=col_names[name], 
-	# 				   delim_whitespace=delim_whitespaces[name])
+	if norm == 'n1':
+		min_max_by_class = get_moments(metadata_df, path_lcs, 
+						   names=col_names[name], 
+						   delim_whitespace=delim_whitespaces[name])
 
 	num_cores = mp.cpu_count()
 	print('[INFO] Online computation')
@@ -322,8 +330,15 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[]):
 													names=col_names[name])
 
 				df = df.iloc[0:lim,:3]
-				min_v = df.min()#min_max_by_class['min']
-				max_v = df.max()#min_max_by_class['max']
+
+				if norm == 'n1':
+					min_v = min_max_by_class['min']
+					max_v = min_max_by_class['max']
+				
+				if norm == 'n2':
+					min_v = df.min()
+					max_v = df.max()
+				
 				normalized_df = (df-min_v)/(max_v-min_v)
 				normalized_df = np.nan_to_num(normalized_df.values)
 				results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
@@ -350,12 +365,12 @@ if __name__ == '__main__':
 	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
 	# path_to_save = '../datasets/features/{}/'.format(name)
 	
-	rf_features_from_dat(path_meta, path_lcs, path_to_save, name)
+	rf_features_from_dat(path_meta, path_lcs, path_to_save, name, norm='n1')
 
 	path_test_meta = '/home/shared/cridonoso/datasets/{}/test_curves.csv'.format(name)
 	# path_test_meta = '../datasets/features/{}/test_curves.csv'.format(name)
 
-	online_features_from_dat(path_test_meta, path_lcs, path_to_save, name)
+	online_features_from_dat(path_test_meta, path_lcs, path_to_save, name, norm='n1')
 
 	# calculate_features(path, name, n_samples=-1, multiprocessing=True)
 	# calculate_online_features(path, name, n_samples=1000, multiprocessing=True)
