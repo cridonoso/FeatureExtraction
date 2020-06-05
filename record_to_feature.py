@@ -269,12 +269,13 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 			if norm == 'n1':
 				min_v = min_max_by_class['min']
 				max_v = min_max_by_class['max']
-			
-			if norm == 'n2':
-				min_v = df.min()
-				max_v = df.max()
+				normalized_df = (df-min_v)/(max_v - min_v)
 
-			normalized_df = (df-min_v)/(max_v-min_v)
+			if norm == 'n2':
+				mean_ = df.mean()
+				std_ = df.std()
+				normalized_df = (df-mean_)/(std_)
+	
 			normalized_df = np.nan_to_num(normalized_df.values)
 
 			
@@ -334,12 +335,13 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm
 				if norm == 'n1':
 					min_v = min_max_by_class['min']
 					max_v = min_max_by_class['max']
-				
+					normalized_df = (df-min_v)/(max_v - min_v)
+
 				if norm == 'n2':
-					min_v = df.min()
-					max_v = df.max()
-				
-				normalized_df = (df-min_v)/(max_v-min_v)
+					mean_ = df.mean()
+					std_ = df.std()
+					normalized_df = (df-mean_)/(std_)
+					
 				normalized_df = np.nan_to_num(normalized_df.values)
 				results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
 				
