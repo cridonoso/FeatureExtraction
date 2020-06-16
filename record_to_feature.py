@@ -148,7 +148,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 
 			
 
-			results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
+			results.append(pool.apply_async(run_fats, args=(normalized_df, [class_code[name][row['Class']]])))
 
 			# if count == 5: break
 			# count+=1
@@ -211,7 +211,7 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm
 					normalized_df = (df-mean_)/(std_)
 					
 				normalized_df = np.nan_to_num(normalized_df.values)
-				results.append(pool.apply_async(run_fats, args=(normalized_df.values, [class_code[name][row['Class']]])))
+				results.append(pool.apply_async(run_fats, args=(normalized_df, [class_code[name][row['Class']]])))
 				
 				# if count==10:break
 				# count+=1
