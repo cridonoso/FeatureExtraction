@@ -63,10 +63,8 @@ def process(path_lcs, lc_id, names, delim_whitespace):
 
 def get_moments(dataframe, path_lcs, names=[], delim_whitespace=True):
 	print('[INFO] Finding min and max values all class objects')
-	
-
-	num_cores = mp.cpu_count()
-	pool = mp.Pool(processes=num_cores)
+	#num_cores = mp.cpu_count()
+	pool = mp.Pool()
 	results = []
 	for k, row in dataframe.iterrows():
 		lc_info = row['Path'].split('/')
@@ -109,15 +107,12 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 	df_train = metadata_df.sample(frac=0.5)
 	df_test  = metadata_df.loc[~metadata_df.index.isin(df_train.index)]
 
-	print(len(np.unique(df_train.Class)))
-	print(len(np.unique(df_test.Class)))
-
 	df_test.to_csv(path_to_save+'/test_curves.csv')
 
-	num_cores = mp.cpu_count()
-
+	# num_cores = mp.cpu_count()
+	print('[INFO] Calculating Features')
 	for dataframe, dsname in zip([df_train, df_test], ['train', 'test']):
-		pool = mp.Pool(processes=num_cores)
+		pool = mp.Pool()
 		results = []
 		starttime = time.time()
 		count = 0 
@@ -146,9 +141,10 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 	
 			normalized_df = np.nan_to_num(normalized_df.values)
 
-			
+			lim = np.arange(200, normalized_df.shape[0]+200, 200)
 
-			results.append(pool.apply_async(run_fats, args=(normalized_df, [class_code[name][row['Class']]])))
+			for l in lim:
+				results.append(pool.apply_async(run_fats, args=(normalized_df[l-200:l, :], [class_code[name][row['Class']]])))
 
 			# if count == 5: break
 			# count+=1
@@ -198,7 +194,7 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm
 													delim_whitespace=delim_whitespaces[name],
 													names=col_names[name])
 
-				df = df.iloc[0:lim,:3]
+				df = df.iloc[0:lim, :3]
 
 				if norm == 'n1':
 					min_v = min_max_by_class['min']
@@ -228,16 +224,19 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm
 
 
 if __name__ == '__main__':
-	name = sys.argv[1] # /ogle/test_0
-	main_path = sys.argv[2] #'../datasets/raw_data/'
+	root = '/home/cridonoso/Documents/plstm_tf2/results/'
+
+	name = sys.argv[1] # NAME OF DATASET. 
+	main_path = sys.argv[2] # WHERE RAW DATA IS LOCALTED e.g., /home/user/datasets/raw_data
 	norm = sys.argv[3]
 	path_meta = '{}/{}/{}/{}_dataset.dat'.format(main_path, name, name.upper(), name.upper())
 	path_lcs  = '{}/{}/{}/LCs/'.format(main_path, name, name.upper())
-	path_to_save = '/home/shared/cridonoso/datasets/features/{}'.format(name)
+
+	path_to_save = '{}/features/{}_{}'.format(root, name, norm)
 	
 	rf_features_from_dat(path_meta, path_lcs, path_to_save, name, norm=norm)
 
-	path_test_meta = '/home/shared/cridonoso/datasets/{}/test_curves.csv'.format(name)
+	path_test_meta = '{}/features/{}_{}/test_curves.csv'.format(root, name, norm)
 
 	online_features_from_dat(path_test_meta, path_lcs, path_to_save, name, norm=norm)
 
