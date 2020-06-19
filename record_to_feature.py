@@ -73,8 +73,9 @@ def get_moments(dataframe, path_lcs, names=[], delim_whitespace=True):
 													   names, 
 													   delim_whitespace)))
 		# if k == 5:break
+	print('[INFO] Pool feeding done')
 	values = np.array([p.get() for p in results])
-
+	print('[INFO] Matrix generated')
 	min_values = np.min(values[:,0,:], 0)
 	max_values = np.max(values[:,1,:], 0)
 	return {'min': min_values, 'max':max_values}
