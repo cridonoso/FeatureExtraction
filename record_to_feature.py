@@ -107,7 +107,6 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 
 	df_train = metadata_df.sample(frac=0.5)
 	df_test  = metadata_df.loc[~metadata_df.index.isin(df_train.index)]
-
 	df_test.to_csv(path_to_save+'/test_curves.csv')
 
 	# num_cores = mp.cpu_count()
@@ -141,11 +140,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 				normalized_df = (df-mean_)/(std_)
 	
 			normalized_df = np.nan_to_num(normalized_df.values)
-
-			lim = np.arange(200, normalized_df.shape[0]+200, 200)
-
-			for l in lim:
-				results.append(pool.apply_async(run_fats, args=(normalized_df[l-200:l, :], [class_code[name][row['Class']]])))
+			results.append(pool.apply_async(run_fats, args=(normalized_df, [class_code[name][row['Class']]])))
 
 			# if count == 5: break
 			# count+=1
