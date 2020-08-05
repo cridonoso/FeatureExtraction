@@ -12,27 +12,16 @@ except:
 import time
 from features_name import most_important, harmonics, others
 
-# class_code = {'wise':{'NC':0, 'RRab':1, 'RRc':2, 'DSCT_SXPHE':3, 'CEP':4, 
-# 			  		  'SRV':5, 'Mira':6, 'OSARG':7, 'NonVar':8},
-# 			  'ogle':{'cep': 0, 'RRab': 1, 'RRc': 2, 'dsct': 3, 'EC': 4, 'ED': 5, 
-# 			  		  'ESD': 6, 'Mira': 7, 'SRV': 8, 'OSARG': 9, 'std': 10},
-# 			  'gaia':{'CEP': 0, 'T2CEP': 1, 'MIRA_SR': 2, 'DSCT_SXPHE':3, 'RRAB':4, 'RRC':5, 'RRD':6},
-# 			  'css':{'ACEP':0, 'Blazkho':1, 'CEPII':2, 'DSC':3, 'EA':4, 'EA_UP':5, 'ELL':6,
-# 		       		  'EW':7, 'HADS':8, 'LPV':9, 'Misc':10, 'RRab':11, 'RRc':12,
-# 		       		  'RRd':13, 'RS_CVn':14, 'Rotational Var':15, 'Transient':16, 'beta_Lyrae':17},
-# 			  'macho': {'QSO':0, 'Be':1, 'CEPH':2, 'RRL':3, 'EB':4, 'MOA':5, 'LPV':6},
-# 			  'linear': {'RRLab':0, 'RRLc':1, 'Eclipsing Algol':2, 'Contact binary':3, 'DSCT':4},
-# 			  'asas': {'Beta Persei':0, 'Classical Cepheid':1, 'RR Lyrae FM':2, 'Semireg PV':3, 'W Ursae Ma':4}
-# }
 class_code = {'wise':{'NC':0, 'RRab':1, 'RRc':2, 'DSCT_SXPHE':3, 'CEP':4, 'SRV':5, 'Mira':6, 'OSARG':7, 'NonVar':8},
 			  'ogle':{'cep': 0, 'RRab': 1, 'RRc': 2, 'dsct': 3, 'EC': 4, 'ED': 5,  'ESD': 6, 'Mira': 7, 'SRV': 8, 'OSARG': 9, 'std': 10},
 			  'gaia':{'CEP': 0, 'T2CEP': 1, 'MIRA_SR': 2, 'DSCT_SXPHE':3, 'RRAB':4, 'RRC':5, 'RRD':6},
 			  # 'css':{'ACEP':0, 'Blazkho':1, 'CEPII':2, 'DSC':3, 'EA':4, 'EA_UP':5, 'ELL':6, 'EW':7, 'HADS':8, 'LPV':9, 'Misc':10, 'RRab':11, 'RRc':12, 'RRd':13, 'RS_CVn':14, 'Rotational Var':15, 'Transient':16, 'beta_Lyrae':17},
-			  'css':{'SN':0,'SN?':0, 'CV':1,'CV?':1, 'AGN':2,'AGN?':2, 'HPM':3, 'Blazar':4 ,'Flare':5, 'Unknown':6, 'Non-Transient':7},
+			  'css':{'SN':0, 'CV':1,'AGN':2, 'HPM':3, 'Blazar':4 ,'Flare':5, 'Unknown':6},
 			  'macho': {'QSO':0, 'Be':1, 'CEPH':2, 'RRL':3, 'EB':4, 'MOA':5, 'LPV':6},
 			  #'linear': {'RRLab':0, 'RRLc':1, 'Eclipsing Algol':2, 'Contact binary':3, 'DSCT':4},
 			  'linear': {'Beta_Persei':0, 'Delta_Scuti':1, 'RR_Lyrae_FM':2, 'RR_Lyrae_FO':3, 'W_Ursae_Maj':4},
 			  'asas': {'Beta Persei':0, 'Classical Cepheid':1, 'RR Lyrae FM':2, 'Semireg PV':3, 'W Ursae Ma':4}
+
 }
 
 skip = {'wise': ['ACEP', 'ARRD', 'C', 'ELL', 'T2CEP', 'RRd'],
@@ -114,6 +103,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 		min_max_by_class = get_moments(metadata_df, path_lcs, 
 						   names=col_names[name], 
 						   delim_whitespace=delim_whitespaces[name])
+		print(min_max_by_class)
 
 	df_train = metadata_df.sample(frac=0.5)
 	df_test  = metadata_df.loc[~metadata_df.index.isin(df_train.index)]
@@ -138,7 +128,7 @@ def rf_features_from_dat(path_meta, path_lcs, path_to_save, name,  norm='n1'):
 									delim_whitespace=delim_whitespaces[name],
 									names=col_names[name])
 
-			df = df.sort_values('mjd')
+			df = df.sort_values(df.columns[0])
 			df = df.iloc[:,:3]
 			
 			if norm == 'n1':
@@ -205,7 +195,7 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm
 					df = pd.read_csv('{}/{}'.format(path_lcs, lc_info[-1]), 
 													delim_whitespace=delim_whitespaces[name],
 													names=col_names[name])
-				df = df.sort_values('mjd')
+				df = df.sort_values(df.columns[0])
 
 				df = df.iloc[0:lim, :3]
 
@@ -240,7 +230,7 @@ def online_features_from_dat(path, path_lcs, path_to_save, name, tokens=[], norm
 
 if __name__ == '__main__':
 	root = '/home/cdonoso/datasets/'
-	#root = '/home/cridonoso/Documents/plstm_tf2/results/'
+	# root = '/home/cridonoso/Documents/plstm_tf2/results/'
 
 	name = sys.argv[1] # NAME OF DATASET. 
 	main_path = sys.argv[2] # WHERE RAW DATA IS LOCALTED e.g., /home/user/datasets/raw_data
